@@ -1,0 +1,79 @@
+#include <DHT.h>                            //引入<DHT.h>標頭檔案
+#include "U8glib.h"                         //引入Oled標頭檔案
+U8GLIB_SH1106_128X64 u8g(U8G_I2C_OPT_NONE); //設定通訊方式為IIC通訊
+#define DHTPIN 8                            //溼度感測器OUT接8號口
+#define DHTTYPE DHT11                       //定義DHT11感測器
+DHT dht(DHTPIN, DHTTYPE);                   //定義溼度感測器OUT與8號口連線並且讀取溫溼度感測器的數值
+int buzzer = 3;                             //定義蜂鳴器引腳3
+int led = 4;                                //定義led引腳4
+int HH;                                     //定義HH變數，用於儲存溼度資料
+int TT;                                     //定義TT變數，用於儲存溫度資料
+void setup()
+{
+   
+   
+  pinMode(buzzer, OUTPUT);                 //設定蜂鳴器引腳為輸出模式
+  pinMode(led, OUTPUT);                    //設定led引腳為輸出模式
+  Serial.begin(9600); //串列埠波特率
+  dht.begin();        //溫溼度感測器初始化
+
+}
+
+void loop()
+{
+   
+   
+  get_temp_humi();           //獲得溫溼度子函式
+  dis_play();                //oled顯示資料子函式
+  if (TT > 50)                //如果溫度大於50°，蜂鳴器響
+    analogWrite(buzzer, 100);
+  else                        //否則，蜂鳴器不響
+    analogWrite(buzzer, 0);
+  if (HH < 30)               //如果溼度小於30，led閃爍
+  {
+   
+   
+    digitalWrite(led, HIGH);
+    delay(50);
+    digitalWrite(led, LOW);
+    delay(50);
+  }
+  else                      //否則，led熄滅
+    digitalWrite(led, LOW);
+}
+
+void get_temp_humi()             //獲取溫溼度資料子函式
+{
+   
+   
+  HH = int(dht.readHumidity());      //獲得溼度
+  TT = int(dht.readTemperature());   //獲得溫度
+  Serial.print("Temp: ");           //串列埠顯示溫溼度資訊
+  Serial.println(TT);
+  Serial.print("Humi: ");
+  Serial.println(HH);
+}
+
+void dis_play()    //OLED資料顯示子函式
+{
+   
+   
+  u8g.firstPage(); //  OLED首頁
+  do
+  {
+   
+   
+    char buffer1[1]; //定義字元buffer1
+        //  將int轉為char顯示出來
+    itoa(TT, buffer1, 10);        //10：10進位制顯示
+    u8g.setFont(u8g_font_gdr10r); //設定字型
+    u8g.drawStr(25, 26, "Temp:"); //第26行25列顯示“Temp：”
+    u8g.drawStr(70, 26, buffer1); //第26行70列顯示溫度資料
+    char buffer2[1];  //定義字元buffer2
+    //  將int轉為char顯示出來
+    itoa(HH, buffer2, 10);        //10：10進位制顯示
+    u8g.setFont(u8g_font_gdr10r); //設定字型
+    u8g.drawStr(25, 60, "Humi:"); //第60行25列顯示“Humi：”
+    u8g.drawStr(70, 60, buffer2); //第60行70列顯示溼度資料
+  } while (u8g.nextPage());       //執行配置
+}
